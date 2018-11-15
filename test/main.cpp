@@ -28,11 +28,23 @@ int main(int argc, const char * argv[]) {
 //    manager.ClearTXT();
 //    manager.SaveToTXT();
     
-    float x1 = 184.0, y1 = 120.0, x2 = 257.2, y2 = 193.2;
-    
-    AfterProcess managerA("/Users/mustafa/Desktop/城规研究室/后处理任务2/Wind.CSV", "/Users/mustafa/Desktop/城规研究室/后处理任务2/Wind.CSV/apResult.txt",x1, y1, x2, y2);
+    double x1 = 184.0, y1 = 120.0, x2 = 257.2, y2 = 193.2;
+    vector<double> vec;
+    vec.push_back(x1);
+    vec.push_back(y1);
+    vec.push_back(x2);
+    vec.push_back(y2);
+    AfterProcess managerA("/Users/mustafa/Desktop/城规研究室/后处理任务2/Wind.CSV", "/Users/mustafa/Desktop/城规研究室/后处理任务2/Wind.CSV/apResult.txt",vec);
     managerA.SaveData();
-//    managerA.PrintData();
+    managerA.PrintXSpeed();
+    managerA.PrintYSpeed();
+    managerA.PrintZSpeed();
+    managerA.SaveNumOf9999();
+    managerA.PrintNumOf9999();
+    managerA.SaveXYZ();
+    managerA.PrintXYZDomain();
+    managerA.CalvulateAvgWindSpeed("0");
+//    managerA.PrintWindSpeed();
 //    managerA.SaveToTXT();
     
     return 0;
