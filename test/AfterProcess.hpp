@@ -27,7 +27,7 @@ public:
     
     void SaveXYZ();//存储各区域xyz取值范围以及xyz极值
     void SaveNumOf9999();
-    void CalvulateAvgWindSpeed(string);
+    vector<double> CalvulateAvgWindSpeed(string);
     
     void PrintXYZDomain();
     void PrintXSpeed();
@@ -41,7 +41,7 @@ public:
 private:
     string src_path;//CSV文件路径
     string dest_path;//目标txt路径
-    vector<double> x_axis, y_axis, z_axis, num_of_9999, xyz_domain;//存储风速二维数组，xx方向的坐标，y方向的坐标，z方向每层的高度，每层-9999的个数，存储设置的区域xyz范围,顺序为x1,y1,x2,y2,z0,za,z1,z2
+    vector<double> x_axis, y_axis, z_axis, num_of_9999, xyz_domain;//存储风速二维数组，xx方向的坐标，y方向的坐标，z方向每层的高度，每层-9999的个数，存储设置的区域xyz范围,顺序为x1,y1,x2,y2,z0,za,z1,z2,x3,y3,z3
     vector<vector<double>> wind_speed;//存储每层的全部风速
     double xMin, xMax, xMid, yMin, yMax, yMid, zMin, zMax;//存储xyz轴的极值以及中心点
     bool ClearTXT();//清空目标txt文件

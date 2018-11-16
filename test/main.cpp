@@ -44,6 +44,10 @@ int main(int argc, const char * argv[]) {
     managerA.SaveXYZ();
     managerA.PrintXYZDomain();
     managerA.CalvulateAvgWindSpeed("0");
+    managerA.CalvulateAvgWindSpeed("a");
+    managerA.CalvulateAvgWindSpeed("1");
+    managerA.CalvulateAvgWindSpeed("2");
+    managerA.CalvulateAvgWindSpeed("3");
 //    managerA.PrintWindSpeed();
 //    managerA.SaveToTXT();
     

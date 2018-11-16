@@ -196,7 +196,7 @@ void AfterProcess::SaveXYZ(){
         if (num_of_9999[i] != 0){
             continue;
         }
-        cout<<"最高建筑高度为第"<<i<<"层"<<endl<<endl;
+        cout<<"最高建筑高度为第"<<i<<"层"<<endl;
         z1 = z_axis[i-1];
         za = z1/2;
         z2 = 1.5 * z1;
@@ -208,125 +208,185 @@ void AfterProcess::SaveXYZ(){
     xyz_domain.push_back(za);
     xyz_domain.push_back(z1);
     xyz_domain.push_back(z2);
+    xyz_domain.push_back(xMax-xMin);//x3
+    xyz_domain.push_back(yMax-yMin);//y3
+    xyz_domain.push_back(zMax);//z3
+    cout<<"xMin:"<<xMin<<"\t\txMax:"<<xMax<<"\t\txMid:"<<xMid<<endl;
+    cout<<"yMin:"<<yMin<<"\tyMax:"<<yMax<<"\tyMid:"<<yMid<<endl;
+    cout<<"zMin:"<<zMin<<"\t\tzMax:"<<zMax<<endl<<endl;
 }
 
 //根据传入的参数，计算对应空间区域的平均风速
-void AfterProcess::CalvulateAvgWindSpeed(string str){
-    cout<<"计算平均风速中..."<<endl;
+vector<double> AfterProcess::CalvulateAvgWindSpeed(string str){
+    cout<<str<<"区域，计算平均风速中..."<<endl;
     
+    int x_domain = 0, y_domain = 0, z_domain = 0;
     int x_left_index = 0, x_right_index = 0, y_left_index = 0, y_right_index = 0, z_down_index = 0, z_up_index = 0;
     double valuel = 0.0, valuer = 0.0;
     // 区域取x1,y1,z0
     if (str == "0"){
-        // 求得x的左右下标界限
-        valuel = xMid - xyz_domain[0]/2; valuer = xMid + xyz_domain[0]/2;
-        for(int i = 0; i < x_axis.size(); i++){
-            if (x_axis[i] < valuel && valuel < x_axis[i+1]){
-                x_left_index = i+1;
-            }
-            if (x_axis[i] < valuer && valuer < x_axis[i+1]){
-                x_right_index = i;
-            }
-        }
-        // 求得y的左右下标界限
-        valuel = yMid + xyz_domain[1]/2; valuer = yMid - xyz_domain[1]/2;
-        for(int i = 0; i < y_axis.size(); i++){
-            if (y_axis[i] < valuel && valuel < y_axis[i+1]){
-                y_left_index = i+1;
-            }
-            if (y_axis[i] < valuer && valuer < y_axis[i+1]){
-                y_right_index = i;
-            }
-        }
-        // 求得z的下标上界
-        z_down_index = 0;
-        for(int i = 0; i < z_axis.size(); i++){
-            if (z_axis[i] < xyz_domain[4] && xyz_domain[4] < z_axis[i+1]){
-                valuel = xyz_domain[4] - z_axis[i];
-                valuer = z_axis[i+1] - xyz_domain[4];
-                if (valuel < valuer){
-                    z_up_index = i;
-                }
-                else{
-                    z_up_index = i+1;
-                }
-            }
-        }
+        x_domain = 0;
+        y_domain = 1;
+        z_domain = 4;
     }
     // 区域取x1,y1,za
     else if (str == "a"){
-        
+        x_domain = 0;
+        y_domain = 1;
+        z_domain = 5;
     }
     // 区域取x1,y1,z1
     else if (str == "1"){
-        
+        x_domain = 0;
+        y_domain = 1;
+        z_domain = 6;
     }
-    // 区域取x2,y2,z2
+    // 区域取x2,y2,z2 - x1,y1,z1
     else if (str == "2"){
-        
+        x_domain = 2;
+        y_domain = 3;
+        z_domain = 7;
     }
-    // 区域取x3,y3,z3
+    // 区域取x3,y3,z3 - x2,y2,z2
     else if (str == "3"){
-        
+        x_domain = 8;
+        y_domain = 9;
+        z_domain = 10;
     }
     
+    // 求得x的左右下标界限
+    valuel = xMid - xyz_domain[x_domain]/2; valuer = xMid + xyz_domain[x_domain]/2;
+    cout<<"x_left_value:"<<valuel<<"\t\tx_right_value:"<<valuer<<endl;
+    for(int i = 0; i < x_axis.size(); i++){
+        if (x_axis[i] < valuel && valuel < x_axis[i+1]){
+            x_left_index = i+1;
+        }
+        else if (x_axis[i] == valuel){
+            x_left_index = i;
+        }
+        if (x_axis[i] < valuer && valuer < x_axis[i+1]){
+            x_right_index = i;
+        }
+        else if (x_axis[i] == valuer){
+            x_right_index = i;
+        }
+    }
+    // 求得y的左右下标界限
+    valuel = yMid + xyz_domain[y_domain]/2; valuer = yMid - xyz_domain[y_domain]/2;
+    cout<<"y_left_value:"<<valuel<<"\ty_right_value:"<<valuer<<endl;
+    for(int i = 0; i < y_axis.size(); i++){
+        if (y_axis[i] == valuel){
+            y_left_index = i;
+        }
+        else if (y_axis[i+1] < valuel && valuel < y_axis[i]){
+            y_left_index = i+1;
+        }
+        else{
+            if (y_axis[i] == valuer){
+                y_right_index = i;
+            }
+            else if (y_axis[i+1] < valuer && valuer < y_axis[i]){
+                y_right_index = i;
+            }
+        }
+    }
+    // 求得z的下标上界
+    z_down_index = 0;
+    for(int i = 0; i < z_axis.size(); i++){
+        if (z_axis[i] < xyz_domain[z_domain] && xyz_domain[z_domain] < z_axis[i+1]){
+            valuel = xyz_domain[z_domain] - z_axis[i];
+            valuer = z_axis[i+1] - xyz_domain[z_domain];
+            if (valuel < valuer){
+                z_up_index = i;
+            }
+            else{
+                z_up_index = i+1;
+            }
+        }
+        else if (z_axis[i] == xyz_domain[z_domain]){
+            z_up_index = i;
+        }
+    }
+    cout<<"z_down_value:"<<0<<"\t\t\tz_up_value:"<<xyz_domain[z_domain]<<endl;
+    
+    //打印调试信息
+    vector<double> vec_wind;
+    cout<<"xyz index scope:\t xLeft: "<<x_left_index<<"\txRight: "<<x_right_index<<"\t\tyLeft： "<<y_left_index<<"\tyRight: "<<y_right_index<<"\tzDown: "<<z_down_index<<"\tzUp: "<<z_up_index<<endl;
+    
+    // 统计计算风速
     for(int i = 0; i < wind_speed.size(); i++){
+        // 如果当前层数小于z的下限则直接跳过
+        if (i < z_down_index){
+            continue;
+        }
+        // 如果当前层数大于z的上限，直接结束风速计算操作
+        else if (i > z_up_index){
+            break;
+        }
+        // 当前层数在所需的范围内
         for(int j = 0; j < wind_speed[i].size(); j++){
-            
+            // 记录当前行数
+            int row = j/x_axis.size();
+            // 当前行数小于y的下限，跳过
+            if (row < y_left_index){
+                continue;
+            }
+            // 当前行数大于y的上限，结束本层操作
+            else if (row > y_right_index){
+                break;
+            }
+            // 当前行数在所需的范围内
+            else{
+                // 记录当前列数
+                int col = j-(j/x_axis.size())*(int)x_axis.size();
+                // 当前列数小于x的下限，跳过
+                if (col < x_left_index){
+                    continue;
+                }
+                // 当前行数大于y的上限，结束本层操作
+                else if (col > x_right_index){
+                    continue;
+                }
+                // 处于区域的层数、行数、列数中，记录风速
+                else{
+                    // 若风速为-9999，跳过
+                    if (wind_speed[i][j] == -9999){
+                        continue;
+                    }
+                    vec_wind.push_back(wind_speed[i][j]);
+                }
+            }
         }
 //        cout<<endl<<"第"<<i+1<<"层风速数据个数："<<wind_speed[i].size()<<endl;
     }
-    cout<<endl;
+    
+    // 计算风速数据个数和风速之和
+    vector<double> temp;
+    double wind_count = vec_wind.size(), wind_sum = 0.0;
+    for (int i = 0; i < vec_wind.size(); i++){
+        wind_sum += vec_wind[i];
+    }
+    
+    // 如果求区域2或区域3的平均风速，需要扣除区域1/2的平均风速
+    if (str == "2"){
+        temp = CalvulateAvgWindSpeed("1");
+        wind_count -= temp[0];
+        wind_sum -= temp[1];
+    }
+    else if (str == "3"){
+        temp = CalvulateAvgWindSpeed("2");
+        wind_count -= temp[0];
+        wind_sum -= temp[1];
+    }
+    
+    cout<<"风速总数量为"<<wind_count<<endl;
+    cout<<str<<"区域的平均风速为"<<wind_sum/wind_count<<endl<<endl;
+    
+    vector<double> result;
+    result.push_back(wind_count);
+    result.push_back(wind_sum);
+    return result;
 }
-
-/*
- vector<string> vec;
- stringstream ss1;
- ss1<<vec_z[0];
- vec.push_back(ss1.str());
- stringstream ss2;
- ss2<<vec_z[1];
- vec.push_back(ss2.str());
- 
- MathFormula mf1(x_speed);
- stringstream ss3;
- ss3<<mf1.Max();
- vec.push_back(ss3.str());
- stringstream ss4;
- ss4<<mf1.Min();
- vec.push_back(ss4.str());
- stringstream ss5;
- ss5<<mf1.AvgGap();
- vec.push_back(ss5.str());
- 
- MathFormula mf2(y_speed);
- stringstream ss6;
- ss6<<mf2.Max();
- vec.push_back(ss6.str());
- stringstream ss7;
- ss7<<mf2.Min();
- vec.push_back(ss7.str());
- stringstream ss8;
- ss8<<mf2.AvgGap();
- vec.push_back(ss8.str());
- 
- MathFormula mf3(vec_speed);
- stringstream ss9;
- ss9<<wind_speed.size();
- vec.push_back(ss9.str());
- stringstream ss10;
- ss10<<mf3.Mean();
- vec.push_back(ss10.str());
- stringstream ss11;
- ss11<<mf3.Variance();
- vec.push_back(ss11.str());
- stringstream ss12;
- ss12<<mf3.StandardDeviation();
- vec.push_back(ss12.str());
- 
- result_data.push_back(vec);
-
- */
 
 /*
  //将结果数据全部存入txt
@@ -365,9 +425,20 @@ void AfterProcess::CalvulateAvgWindSpeed(string str){
 
 void AfterProcess::PrintXYZDomain(){
     cout<<"打印XYZ域数据"<<endl;
-    for(int i = 0; i < xyz_domain.size(); i++)
-        cout<<xyz_domain[i]<<"\t";
-    cout<<endl<<endl;
+//    for(int i = 0; i < xyz_domain.size(); i++)
+//        cout<<xyz_domain[i]<<"\t";
+    cout<<"x1:\t"<<xyz_domain[0]<<endl;
+    cout<<"y1:\t"<<xyz_domain[1]<<endl;
+    cout<<"x2:\t"<<xyz_domain[2]<<endl;
+    cout<<"y2:\t"<<xyz_domain[3]<<endl;
+    cout<<"z0:\t"<<xyz_domain[4]<<endl;
+    cout<<"za:\t"<<xyz_domain[5]<<endl;
+    cout<<"z1:\t"<<xyz_domain[6]<<endl;
+    cout<<"z2:\t"<<xyz_domain[7]<<endl;
+    cout<<"x3:\t"<<xyz_domain[8]<<endl;
+    cout<<"y3:\t"<<xyz_domain[9]<<endl;
+    cout<<"z3:\t"<<xyz_domain[10]<<endl<<endl;
+//    cout<<endl<<endl;
 }
 
 void AfterProcess::PrintXSpeed(){
