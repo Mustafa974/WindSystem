@@ -35,23 +35,23 @@ int main(int argc, const char * argv[]) {
     vec.push_back(x2);
     vec.push_back(y2);
     AfterProcess managerA(vec);
-//    managerA.SaveData("/Users/mustafa/Desktop/城规研究室/后处理任务2/Wind.CSV");
+    managerA.SaveData("/Users/mustafa/Desktop/城规研究室/后处理任务2/Wind.CSV");
 //    managerA.PrintXSpeed();
 //    managerA.PrintYSpeed();
 //    managerA.PrintZSpeed();
-//    managerA.SaveNumOf9999();
-//    managerA.PrintNumOf9999();
-//    managerA.SaveXYZ();
+    managerA.SaveNumOf9999();
+    managerA.PrintNumOf9999();
+    managerA.SaveXYZ();
 //    managerA.PrintXYZDomain();
 //    managerA.CalculateAvgWindSpeed("0");
-//    managerA.CalculateAvgWindSpeed("a");
+    managerA.CalculateAvgWindSpeed("a");
 //    managerA.CalculateAvgWindSpeed("1");
 //    managerA.CalculateAvgWindSpeed("2");
 //    managerA.CalculateAvgWindSpeed("3");
-    
-    managerA.SaveXYData("/Users/mustafa/Desktop/城规研究室/后处理任务2/WindX.CSV", "/Users/mustafa/Desktop/城规研究室/后处理任务2/WindY.CSV", 117);
-    managerA.CalculateAngle();
-    managerA.PrintAngle();
+    managerA.CalculateV1();
+//    managerA.SaveXYData("/Users/mustafa/Desktop/城规研究室/后处理任务2/WindX.CSV", "/Users/mustafa/Desktop/城规研究室/后处理任务2/WindY.CSV", 117);
+//    managerA.CalculateAngle();
+//    managerA.PrintAngle();
 //    managerA.PrintWindSpeed();
 //    managerA.SaveToTXT();
     

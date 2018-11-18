@@ -8,7 +8,14 @@
 
 #include "AfterProcess.hpp"
 #include <math.h>
+#include <map>
 #define PI acos(-1)
+typedef pair<double, int> PAIR;
+struct CmpByValue {
+    bool operator()(const PAIR& lhs, const PAIR& rhs) {
+        return lhs.second > rhs.second;
+    }
+};
 
 //构造函数，传入csv文件路径、目标txt文件路径
 AfterProcess::AfterProcess(vector<double> xy){
@@ -137,6 +144,7 @@ bool AfterProcess::SaveData(string src_path){
 
 //存储CSV中的X、Y轴风速
 void AfterProcess::SaveXYData(string src_path_X, string src_path_Y, int col){
+    cout<<"存储XY风向数据中..."<<endl;
     ifstream finX(src_path_X);
     if (!finX){
         cout<<"无法打开X文件"<<endl;//若无法打开文件，直接返回false
@@ -190,7 +198,7 @@ void AfterProcess::SaveXYData(string src_path_X, string src_path_Y, int col){
                             continue;
                         }
                         if (atof(field.c_str()) == 0 && num >= col){//读到一行的末尾，直接跳出循环
-                            cout<<count+1<<" 行 "<<num+1<<" 列，"<<"到行末，读到EOF 0字符"<<endl;
+//                            cout<<count+1<<" 行 "<<num+1<<" 列，"<<"到行末，读到EOF 0字符"<<endl;
                             break;
                         }
                         else if (num > 1){//正式行的正式列，全部存入总风速数列
@@ -259,7 +267,7 @@ void AfterProcess::SaveXYData(string src_path_X, string src_path_Y, int col){
                             continue;
                         }
                         if (atof(field.c_str()) == 0 && num >= col){//读到一行的末尾，直接跳出循环
-                            cout<<count+1<<" 行 "<<num+1<<" 列，"<<"到行末，读到EOF 0字符"<<endl;
+//                            cout<<count+1<<" 行 "<<num+1<<" 列，"<<"到行末，读到EOF 0字符"<<endl;
                             break;
                         }
                         else if (num > 1){//正式行的正式列，全部存入总风速数列
@@ -366,13 +374,15 @@ void AfterProcess::SaveXYZ(){
     cout<<"zMin:"<<zMin<<"\t\tzMax:"<<zMax<<endl<<endl;
 }
 
-//根据传入的参数，计算对应空间区域的平均风速
-vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
-    cout<<str<<"区域，计算平均风速中..."<<endl;
+//获取某区域的xyz下标上下限
+vector<int> AfterProcess::GetXYZIndex(string str){
+    cout<<"获取"<<str<<"区域xyz下标中..."<<endl;
     
     int x_domain = 0, y_domain = 0, z_domain = 0;
     int x_left_index = 0, x_right_index = 0, y_left_index = 0, y_right_index = 0, z_down_index = 0, z_up_index = 0;
     double valuel = 0.0, valuer = 0.0;
+    vector<int> result;
+
     // 区域取x1,y1,z0
     if (str == "0"){
         x_domain = 0;
@@ -460,8 +470,31 @@ vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
     cout<<"z_down_value:"<<0<<"\t\t\tz_up_value:"<<xyz_domain[z_domain]<<endl;
     
     //打印调试信息
+    cout<<"xyz index scope:\t xLeft: "<<x_left_index<<"\txRight: "<<x_right_index<<"\t\tyLeft： "<<y_left_index<<"\tyRight: "<<y_right_index<<"\tzDown: "<<z_down_index<<"\tzUp: "<<z_up_index<<endl<<endl;
+    
+    result.push_back(x_left_index);
+    result.push_back(x_right_index);
+    result.push_back(y_left_index);
+    result.push_back(y_right_index);
+    result.push_back(z_down_index);
+    result.push_back(z_up_index);
+    return result;
+}
+
+//根据传入的参数，计算对应空间区域的平均风速
+vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
+    cout<<str<<"区域，计算平均风速中..."<<endl;
+    int x_left_index = 0, x_right_index = 0, y_left_index = 0, y_right_index = 0, z_down_index = 0, z_up_index = 0;
+    vector<int> XYZIndex = GetXYZIndex(str);
     vector<double> vec_wind;
-    cout<<"xyz index scope:\t xLeft: "<<x_left_index<<"\txRight: "<<x_right_index<<"\t\tyLeft： "<<y_left_index<<"\tyRight: "<<y_right_index<<"\tzDown: "<<z_down_index<<"\tzUp: "<<z_up_index<<endl;
+    map<double, int> wind_map;
+    
+    x_left_index = XYZIndex[0];
+    x_right_index = XYZIndex[1];
+    y_left_index = XYZIndex[2];
+    y_right_index = XYZIndex[3];
+    z_down_index = XYZIndex[4];
+    z_up_index = XYZIndex[5];
     
     // 统计计算风速
     for(int i = 0; i < wind_speed.size(); i++){
@@ -503,6 +536,7 @@ vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
                     if (wind_speed[i][j] == -9999){
                         continue;
                     }
+                    wind_map[wind_speed[i][j]]++;
                     vec_wind.push_back(wind_speed[i][j]);
                 }
             }
@@ -515,6 +549,22 @@ vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
     double wind_count = vec_wind.size(), wind_sum = 0.0;
     for (int i = 0; i < vec_wind.size(); i++){
         wind_sum += vec_wind[i];
+    }
+    
+    // 如果为区域a，则进行风速0.1m/s间隔输出
+    if (str == "a"){
+        double last = wind_map.begin()->first, max = wind_map.end()->first;
+        int count = 0;
+        for (map<double, int>::iterator it  = wind_map.begin(); it != wind_map.end(); it++){
+            if (it->first <= last+0.1){
+                count += it->second;
+            }
+            else{
+                cout<<"风速区间起始点："<<last<<"风速数量："<<count<<endl;
+                last = it->first;
+                count = it->second;
+            }
+        }
     }
     
     // 如果求区域2或区域3的平均风速，需要扣除区域1/2的平均风速
@@ -558,7 +608,7 @@ void AfterProcess::CalculateAngle(){
 //                        continue;
 //                    }
                     angle = atan2(wind_speed_Y[i][j], wind_speed_X[i][j])/PI*180;
-                    cout<<"XY都有数据，Y方向为: "<<wind_speed_Y[i][j]<<",\t\tX方向为: "<<wind_speed_X[i][j]<<",\t正切值为: "<<wind_speed_Y[i][j]/wind_speed_X[i][j]<<",\t角度为: "<<angle<<endl;
+                    cout<<"XY都有数据，Y方向为: "<<wind_speed_Y[i][j]<<",\t\tX方向为: "<<wind_speed_X[i][j]<<",\t\t正切值为: "<<wind_speed_Y[i][j]/wind_speed_X[i][j]<<",\t\t角度为: "<<angle<<endl;
                 }
                 vec_angle.push_back(angle);
             }
@@ -567,40 +617,112 @@ void AfterProcess::CalculateAngle(){
     }
 }
 
-/*
- //将结果数据全部存入txt
- bool AfterProcess::SaveToTXT(){
- ClearTXT();
- ofstream outfile;
- outfile.open(dest_path, ios::binary | ios::app | ios::in | ios::out);
- if (!outfile){
- cout<<"无法输出到txt"<<endl;//无法打开文件，返回false
- return false;
- }
- vector<vector<string>>::iterator it = result_data.begin();
- while (it != result_data.end()) {
- vector<string> vec = *it;
- //存储过程
- outfile<<"Z="<<vec[0]<<", 高度="<<vec[1]<<", XMax="<<vec[2]<<", XMin="<<vec[3]<<", X平均间距="<<vec[4]<<", YMax="<<vec[5]<<", YMin="<<vec[6]<<", Y平均间距="<<vec[7]<<", 有效数据量="<<vec[8]<<"个, 平均风速="<<vec[9]<<", 方差="<<vec[10]<<", 标准差="<<vec[11]<<endl;
- it++;
- }
- outfile.close();
- cout<<"存储到txt成功"<<endl;
- return true;
- }
- 
- //清空目标txt文件
- bool AfterProcess::ClearTXT(){
- ofstream f(dest_path, ios::trunc);
- if (!f ){
- cout<<"无法打开txt"<<endl;
- return false;
- }
- f.close();
- cout<<"成功清空txt"<<endl;
- return true;
- }
- */
+//计算V1：外围3区域z=2最高频风速
+double AfterProcess::CalculateV1(){
+    double x_left_left_index = 0.0, x_left_right_index = 0.0, x_right_left_index = 0.0, x_right_right_index = 0.0, y_left_left_index = 0.0, y_left_right_index = 0.0, y_right_left_index = 0.0, y_right_right_index = 0.0, z_index = 0.0;
+    map<double, int> wind_map;
+    vector<int> indices = GetXYZIndex("3");
+    x_left_left_index = indices[0];
+    x_right_right_index = indices[1];
+    y_left_left_index = indices[2];
+    y_right_right_index = indices[3];
+    indices = GetXYZIndex("2");
+    x_left_right_index = indices[0];
+    x_right_left_index = indices[1];
+    y_left_right_index = indices[2];
+    y_right_left_index = indices[3];
+    indices = GetXYZIndex("0");
+    z_index = indices[5];
+    
+    //存储指定区域内风速频率
+    for (int i = 0; i < wind_speed[z_index].size(); i++){
+        // 记录当前行数
+        int row = i/x_axis.size();
+        // 当前行数小于y的下限，跳过
+        if (row < y_left_left_index){
+            continue;
+        }
+        // 当前行数大于y的上限，结束本层操作
+        else if (row > y_right_right_index){
+            break;
+        }
+        // 当前行数在外边框区域，直接计算
+        else if ((row >= y_left_left_index && row < y_left_right_index)||(row>y_right_left_index && row <= y_right_right_index)){
+            // 记录当前列数
+            int col = i-(i/x_axis.size())*(int)x_axis.size();
+            // 当前列数小于x的下限，跳过
+            if (col < x_left_left_index){
+                continue;
+            }
+            // 当前列数大于x的上限，结束本层操作
+            else if (col > x_right_right_index){
+                continue;
+            }
+            // 处于区域的层数、行数、列数中，记录风速
+            else{
+//                cout<<row<<" 行 "<<col<<" 列，存储风速 "<<wind_speed[z_index][i]<<endl;
+                // 若风速为-9999，跳过
+                if (wind_speed[z_index][i] == -9999){
+                    continue;
+                }
+                double ws = wind_speed[z_index][i];
+                wind_map[ws]++;
+            }
+        }
+        // 当前行数在内边框区域，扣除中间x区域
+        else{
+            // 记录当前列数
+            int col = i-(i/x_axis.size())*(int)x_axis.size();
+            // 当前列数小于x的下限，跳过
+            if (col < x_left_left_index){
+                continue;
+            }
+            // 当前列数大于x的上限，结束本层操作
+            else if (col > x_right_right_index){
+                continue;
+            }
+            // 当前
+            else if (col >= x_left_right_index && col <= x_right_left_index){
+//                cout<<row<<" 行 "<<col<<" 列，扣除中间区域2数据"<<endl;
+                continue;
+            }
+            // 处于区域的层数、行数、列数中，记录风速
+            else{
+//                cout<<row<<" 行 "<<col<<" 列，存储风速 "<<wind_speed[z_index][i]<<endl;
+                // 若风速为-9999，跳过
+                if (wind_speed[z_index][i] == -9999){
+                    continue;
+                }
+                double ws = wind_speed[z_index][i];
+                wind_map[ws]++;
+            }
+        }
+    }
+    
+    //把map中元素转存到vector中
+    vector<PAIR> wind_map_vec;
+    for(map<double, int>::iterator it = wind_map.begin(); it != wind_map.end(); it++){
+        wind_map_vec.push_back(make_pair(it->first, it->second));
+    }
+    //将y风速按照出现频次排序并存入vector中
+    sort(wind_map_vec.begin(), wind_map_vec.end(), CmpByValue());
+    //打印存储下来的风速map
+//    for (vector<PAIR>::iterator it = wind_map_vec.begin(); it < wind_map_vec.end(); it++) {
+//        cout<<"风速："<<it->first<<"\t频数："<<it->second<<endl;
+//    }
+    //找到频率最高的风速并返回
+    double result = wind_map_vec.begin()->first;\
+    return result;
+}
+
+//计算目标区域中的Rv
+void AfterProcess::CalculateRv(string str){
+    cout<<"计算Rv中..."<<endl;
+    double x_left_left_index = 0.0, x_left_right_index = 0.0, x_right_left_index = 0.0, x_right_right_index = 0.0, y_left_left_index = 0.0, y_left_right_index = 0.0, y_right_left_index = 0.0, y_right_right_index = 0.0, z_index = 0.0;
+    
+    
+    
+}
 
 void AfterProcess::PrintXYZDomain(){
     cout<<"打印XYZ域数据"<<endl;
@@ -697,3 +819,37 @@ string AfterProcess::Trim(string str){
     return str;
 }
 
+/*
+ //将结果数据全部存入txt
+ bool AfterProcess::SaveToTXT(){
+ ClearTXT();
+ ofstream outfile;
+ outfile.open(dest_path, ios::binary | ios::app | ios::in | ios::out);
+ if (!outfile){
+ cout<<"无法输出到txt"<<endl;//无法打开文件，返回false
+ return false;
+ }
+ vector<vector<string>>::iterator it = result_data.begin();
+ while (it != result_data.end()) {
+ vector<string> vec = *it;
+ //存储过程
+ outfile<<"Z="<<vec[0]<<", 高度="<<vec[1]<<", XMax="<<vec[2]<<", XMin="<<vec[3]<<", X平均间距="<<vec[4]<<", YMax="<<vec[5]<<", YMin="<<vec[6]<<", Y平均间距="<<vec[7]<<", 有效数据量="<<vec[8]<<"个, 平均风速="<<vec[9]<<", 方差="<<vec[10]<<", 标准差="<<vec[11]<<endl;
+ it++;
+ }
+ outfile.close();
+ cout<<"存储到txt成功"<<endl;
+ return true;
+ }
+ 
+ //清空目标txt文件
+ bool AfterProcess::ClearTXT(){
+ ofstream f(dest_path, ios::trunc);
+ if (!f ){
+ cout<<"无法打开txt"<<endl;
+ return false;
+ }
+ f.close();
+ cout<<"成功清空txt"<<endl;
+ return true;
+ }
+ */
