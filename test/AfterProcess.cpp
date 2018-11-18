@@ -51,7 +51,7 @@ bool AfterProcess::SaveData(string src_path){
             }
             //如果当前行为空行，直接跳过
             if ((line == "\n")||(line == "")||(line == "\r")){
-                cout<<"遇到直接空行，跳过"<<endl;
+//                cout<<"遇到直接空行，跳过"<<endl;
                 wind_speed.push_back(vec_speed);
                 count = 0;
                 vec_speed.clear();
@@ -416,7 +416,7 @@ vector<int> AfterProcess::GetXYZIndex(string str){
     
     // 求得x的左右下标界限
     valuel = xMid - xyz_domain[x_domain]/2; valuer = xMid + xyz_domain[x_domain]/2;
-    cout<<"x_left_value:"<<valuel<<"\t\tx_right_value:"<<valuer<<endl;
+//    cout<<"x_left_value:"<<valuel<<"\t\tx_right_value:"<<valuer<<endl;
     for(int i = 0; i < x_axis.size(); i++){
         if (x_axis[i] < valuel && valuel < x_axis[i+1]){
             x_left_index = i+1;
@@ -433,7 +433,7 @@ vector<int> AfterProcess::GetXYZIndex(string str){
     }
     // 求得y的左右下标界限
     valuel = yMid + xyz_domain[y_domain]/2; valuer = yMid - xyz_domain[y_domain]/2;
-    cout<<"y_left_value:"<<valuel<<"\ty_right_value:"<<valuer<<endl;
+//    cout<<"y_left_value:"<<valuel<<"\ty_right_value:"<<valuer<<endl;
     for(int i = 0; i < y_axis.size(); i++){
         if (y_axis[i] == valuel){
             y_left_index = i;
@@ -467,10 +467,10 @@ vector<int> AfterProcess::GetXYZIndex(string str){
             z_up_index = i;
         }
     }
-    cout<<"z_down_value:"<<0<<"\t\t\tz_up_value:"<<xyz_domain[z_domain]<<endl;
+//    cout<<"z_down_value:"<<0<<"\t\t\tz_up_value:"<<xyz_domain[z_domain]<<endl;
     
     //打印调试信息
-    cout<<"xyz index scope:\t xLeft: "<<x_left_index<<"\txRight: "<<x_right_index<<"\t\tyLeft： "<<y_left_index<<"\tyRight: "<<y_right_index<<"\tzDown: "<<z_down_index<<"\tzUp: "<<z_up_index<<endl<<endl;
+//    cout<<"xyz index scope:\t xLeft: "<<x_left_index<<"\txRight: "<<x_right_index<<"\t\tyLeft： "<<y_left_index<<"\tyRight: "<<y_right_index<<"\tzDown: "<<z_down_index<<"\tzUp: "<<z_up_index<<endl<<endl;
     
     result.push_back(x_left_index);
     result.push_back(x_right_index);
@@ -553,7 +553,7 @@ vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
     
     // 如果为区域a，则进行风速0.1m/s间隔输出
     if (str == "a"){
-        double last = wind_map.begin()->first, max = wind_map.end()->first;
+        double last = wind_map.begin()->first;
         int count = 0;
         for (map<double, int>::iterator it  = wind_map.begin(); it != wind_map.end(); it++){
             if (it->first <= last+0.1){
@@ -617,8 +617,9 @@ void AfterProcess::CalculateAngle(){
     }
 }
 
-//计算V1：外围3区域z=2最高频风速
-double AfterProcess::CalculateV1(){
+//计算V1：外围3区域z=2最高频风速/风向角度
+double AfterProcess::CalculateV1Andθ(vector<vector<double>> vec){
+    cout<<"计算V1/θ中..."<<endl;
     double x_left_left_index = 0.0, x_left_right_index = 0.0, x_right_left_index = 0.0, x_right_right_index = 0.0, y_left_left_index = 0.0, y_left_right_index = 0.0, y_right_left_index = 0.0, y_right_right_index = 0.0, z_index = 0.0;
     map<double, int> wind_map;
     vector<int> indices = GetXYZIndex("3");
@@ -635,7 +636,7 @@ double AfterProcess::CalculateV1(){
     z_index = indices[5];
     
     //存储指定区域内风速频率
-    for (int i = 0; i < wind_speed[z_index].size(); i++){
+    for (int i = 0; i < vec[z_index].size(); i++){
         // 记录当前行数
         int row = i/x_axis.size();
         // 当前行数小于y的下限，跳过
@@ -662,10 +663,10 @@ double AfterProcess::CalculateV1(){
             else{
 //                cout<<row<<" 行 "<<col<<" 列，存储风速 "<<wind_speed[z_index][i]<<endl;
                 // 若风速为-9999，跳过
-                if (wind_speed[z_index][i] == -9999){
+                if (vec[z_index][i] == -9999){
                     continue;
                 }
-                double ws = wind_speed[z_index][i];
+                double ws = vec[z_index][i];
                 wind_map[ws]++;
             }
         }
@@ -690,10 +691,10 @@ double AfterProcess::CalculateV1(){
             else{
 //                cout<<row<<" 行 "<<col<<" 列，存储风速 "<<wind_speed[z_index][i]<<endl;
                 // 若风速为-9999，跳过
-                if (wind_speed[z_index][i] == -9999){
+                if (vec[z_index][i] == -9999){
                     continue;
                 }
-                double ws = wind_speed[z_index][i];
+                double ws = vec[z_index][i];
                 wind_map[ws]++;
             }
         }
@@ -711,17 +712,337 @@ double AfterProcess::CalculateV1(){
 //        cout<<"风速："<<it->first<<"\t频数："<<it->second<<endl;
 //    }
     //找到频率最高的风速并返回
-    double result = wind_map_vec.begin()->first;\
+    double result = wind_map_vec.begin()->first;
+    cout<<"V1的风速/θ角度为："<<result<<endl<<endl;
     return result;
 }
 
 //计算目标区域中的Rv
 void AfterProcess::CalculateRv(string str){
-    cout<<"计算Rv中..."<<endl;
-    double x_left_left_index = 0.0, x_left_right_index = 0.0, x_right_left_index = 0.0, x_right_right_index = 0.0, y_left_left_index = 0.0, y_left_right_index = 0.0, y_right_left_index = 0.0, y_right_right_index = 0.0, z_index = 0.0;
+    cout<<"计算"<<str<<"区域Rv中..."<<endl;
+    vector<double> vec_wind;
+    double x_left_left_index = 0.0, x_left_right_index = 0.0, x_right_left_index = 0.0, x_right_right_index = 0.0, y_left_left_index = 0.0, y_left_right_index = 0.0, y_right_left_index = 0.0, y_right_right_index = 0.0, z_index = 0.0, z_down_index = 0.0, V1 = 0.0;
+    V1 = CalculateV1Andθ(wind_speed);
     
+    //不用扣除，直接计算
+    if (str == "0" || str == "a" || str == "1"){
+        vector<int> indices = GetXYZIndex(str);
+        x_left_left_index = indices[0];
+        x_right_right_index = indices[1];
+        y_left_left_index = indices[2];
+        y_right_right_index = indices[3];
+        z_index = indices[5];
+        
+        for(int i = 0; i < wind_speed.size(); i++){
+            if (i > z_index){
+                break;
+            }
+            for(int j = 0; j < wind_speed[i].size(); j++){
+                int row = j/x_axis.size();
+                if (row < y_left_left_index){
+                    continue;
+                }
+                else if (row > y_right_right_index){
+                    break;
+                }
+                else{
+                    int col = j-(j/x_axis.size())*(int)x_axis.size();
+                    if (col < x_left_left_index){
+                        continue;
+                    }
+                    else if (col > x_right_right_index){
+                        continue;
+                    }
+                    else{
+                        if (wind_speed[i][j] == -9999){
+                            vec_wind.push_back(-9999);
+                            continue;
+                        }
+                        vec_wind.push_back(wind_speed[i][j]/V1);
+                    }
+                }
+            }
+            wind_Rv.push_back(vec_wind);
+            vec_wind.clear();
+        }
+    }
     
+    //扣除中间的区域再计算
+    else if (str == "2"){
+        vector<int> indices = GetXYZIndex(str);
+        x_left_left_index = indices[0];
+        x_right_right_index = indices[1];
+        y_left_left_index = indices[2];
+        y_right_right_index = indices[3];
+        z_index = indices[5];
+        indices = GetXYZIndex("1");
+        x_left_right_index = indices[0];
+        x_right_left_index = indices[1];
+        y_left_right_index = indices[2];
+        y_right_left_index = indices[3];
+        z_down_index = indices[5];
+        
+        for(int i = 0; i < wind_speed.size(); i++){
+            if (i > z_index){
+                break;
+            }
+            else if (i > z_down_index && i < z_index){
+                for(int j = 0; j < wind_speed[i].size(); j++){
+                    int row = j/x_axis.size();
+                    if (row < y_left_left_index){
+                        continue;
+                    }
+                    else if (row > y_right_right_index){
+                        break;
+                    }
+                    else{
+                        int col = j-(j/x_axis.size())*(int)x_axis.size();
+                        if (col < x_left_left_index){
+                            continue;
+                        }
+                        else if (col > x_right_right_index){
+                            continue;
+                        }
+                        else{
+                            if (wind_speed[i][j] == -9999){
+                                vec_wind.push_back(-9999);
+                                continue;
+                            }
+                            vec_wind.push_back(wind_speed[i][j]/V1);
+                        }
+                    }
+                }
+                wind_Rv.push_back(vec_wind);
+                vec_wind.clear();
+            }
+            // 当前层数在1区域内，需要扣除中间部分
+            else {
+                for (int j = 0; j < wind_speed[i].size(); j++){
+                    int row = j/x_axis.size();
+                    if (row < y_left_left_index){
+                        continue;
+                    }
+                    else if (row > y_right_right_index){
+                        break;
+                    }
+                    else if ((row >= y_left_left_index && row < y_left_right_index)||(row>y_right_left_index && row <= y_right_right_index)){
+                        int col = j-(j/x_axis.size())*(int)x_axis.size();
+                        if (col < x_left_left_index){
+                            continue;
+                        }
+                        else if (col > x_right_right_index){
+                            continue;
+                        }
+                        else{
+                            if (wind_speed[i][j] == -9999){
+                                vec_wind.push_back(-9999);
+                                continue;
+                            }
+                            vec_wind.push_back(wind_speed[i][j]/V1);
+                        }
+                    }
+                    else{
+                        int col = i-(i/x_axis.size())*(int)x_axis.size();
+                        if (col < x_left_left_index){
+                            continue;
+                        }
+                        else if (col > x_right_right_index){
+                            continue;
+                        }
+                        else if (col >= x_left_right_index && col <= x_right_left_index){
+                            continue;
+                        }
+                        else{
+                            if (wind_speed[i][j] == -9999){
+                                vec_wind.push_back(-9999);
+                                continue;
+                            }
+                            vec_wind.push_back(wind_speed[i][j]/V1);
+                        }
+                    }
+                }
+                wind_Rv.push_back(vec_wind);
+                vec_wind.clear();
+            }
+        }
+    }
+    cout<<endl;
+}
     
+//计算目标区域中的θ2
+void AfterProcess::CalculateθRatio(string str){
+    cout<<"计算"<<str<<"区域θ比值中..."<<endl;
+    int count = 0;
+    vector<double> vec_angle;
+    double x_left_left_index = 0.0, x_left_right_index = 0.0, x_right_left_index = 0.0, x_right_right_index = 0.0, y_left_left_index = 0.0, y_left_right_index = 0.0, y_right_left_index = 0.0, y_right_right_index = 0.0, z_index = 0.0, z_down_index = 0.0, theta = 0.0;
+    theta = CalculateV1Andθ(wind_angle);
+    
+    //不用扣除，直接计算
+    if (str == "0" || str == "a" || str == "1"){
+        vector<int> indices = GetXYZIndex(str);
+        x_left_left_index = indices[0];
+        x_right_right_index = indices[1];
+        y_left_left_index = indices[2];
+        y_right_right_index = indices[3];
+        z_index = indices[5];
+        
+        for(int i = 0; i < wind_angle.size(); i++){
+            if (i > z_index){
+                break;
+            }
+            for(int j = 0; j < wind_angle[i].size(); j++){
+                int row = j/x_axis.size();
+                if (row < y_left_left_index){
+                    continue;
+                }
+                else if (row > y_right_right_index){
+                    break;
+                }
+                else{
+                    int col = j-(j/x_axis.size())*(int)x_axis.size();
+                    if (col < x_left_left_index){
+                        continue;
+                    }
+                    else if (col > x_right_right_index){
+                        continue;
+                    }
+                    else{
+                        if (wind_angle[i][j] == -9999){
+                            continue;
+                        }
+                        vec_angle.push_back(wind_angle[i][j]);
+                    }
+                }
+            }
+        }
+    }
+    
+    //扣除中间的区域再计算
+    else if (str == "2"){
+        vector<int> indices = GetXYZIndex(str);
+        x_left_left_index = indices[0];
+        x_right_right_index = indices[1];
+        y_left_left_index = indices[2];
+        y_right_right_index = indices[3];
+        z_index = indices[5];
+        indices = GetXYZIndex("1");
+        x_left_right_index = indices[0];
+        x_right_left_index = indices[1];
+        y_left_right_index = indices[2];
+        y_right_left_index = indices[3];
+        z_down_index = indices[5];
+        
+        for(int i = 0; i < wind_angle.size(); i++){
+            if (i > z_index){
+                break;
+            }
+            else if (i > z_down_index && i < z_index){
+                for(int j = 0; j < wind_angle[i].size(); j++){
+                    int row = j/x_axis.size();
+                    if (row < y_left_left_index){
+                        continue;
+                    }
+                    else if (row > y_right_right_index){
+                        break;
+                    }
+                    else{
+                        int col = j-(j/x_axis.size())*(int)x_axis.size();
+                        if (col < x_left_left_index){
+                            continue;
+                        }
+                        else if (col > x_right_right_index){
+                            continue;
+                        }
+                        else{
+                            if (wind_angle[i][j] == -9999){
+                                continue;
+                            }
+                            vec_angle.push_back(wind_angle[i][j]);
+                        }
+                    }
+                }
+            }
+            // 当前层数在1区域内，需要扣除中间部分
+            else {
+                for (int j = 0; j < wind_angle[i].size(); j++){
+                    int row = j/x_axis.size();
+                    if (row < y_left_left_index){
+                        continue;
+                    }
+                    else if (row > y_right_right_index){
+                        break;
+                    }
+                    else if ((row >= y_left_left_index && row < y_left_right_index)||(row>y_right_left_index && row <= y_right_right_index)){
+                        int col = j-(j/x_axis.size())*(int)x_axis.size();
+                        if (col < x_left_left_index){
+                            continue;
+                        }
+                        else if (col > x_right_right_index){
+                            continue;
+                        }
+                        else{
+                            if (wind_angle[i][j] == -9999){
+                                continue;
+                            }
+                            vec_angle.push_back(wind_angle[i][j]);
+                        }
+                    }
+                    else{
+                        int col = i-(i/x_axis.size())*(int)x_axis.size();
+                        if (col < x_left_left_index){
+                            continue;
+                        }
+                        else if (col > x_right_right_index){
+                            continue;
+                        }
+                        else if (col >= x_left_right_index && col <= x_right_left_index){
+                            continue;
+                        }
+                        else{
+                            if (wind_angle[z_index][i] == -9999){
+                                continue;
+                            }
+                            vec_angle.push_back(wind_angle[i][j]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    //计算角度上下限
+    double min = 0.0, max = 0.0;
+    if (theta >= 30 && theta <= 330){
+        min = theta - 30;
+        max = theta + 30;
+    }
+    else if (0 <= theta && theta < 30){
+        min = theta - 30 + 360;
+        max = theta + 30;
+    }
+    else if (330 < theta && theta <= 360){
+        min = theta - 30;
+        max = theta + 30 - 360;
+    }
+    
+    //计算百分比
+    if (max > min){
+        for (int i = 0; i < vec_angle.size(); i++){
+            if (vec_angle[i] < max && vec_angle[i] > min){
+                count++;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < vec_angle.size(); i++){
+            if ((vec_angle[i] < max && vec_angle[i] > 0)||(vec_angle[i] < 360 && vec_angle[i] > min)){
+                count++;
+            }
+        }
+    }
+    
+    double result = (double)count/vec_angle.size();
+    cout<<str<<"区域的标准角度为："<<theta<<",\t占比为："<<result<<endl<<endl;
 }
 
 void AfterProcess::PrintXYZDomain(){
@@ -789,6 +1110,18 @@ void AfterProcess::PrintAngle(){
 //            cout<<wind_angle[i][j]<<"\t";
 //        }
         cout<<endl<<"第"<<i+1<<"层风速角度打印结束, 数据量为"<<wind_angle[i].size()<<endl;
+    }
+    cout<<endl;
+}
+
+void AfterProcess::PrintRv(){
+    cout<<"打印风速比例中..."<<endl;
+    cout<<"风速比例列表共"<<wind_Rv.size()<<"行"<<endl;
+    for(int i = 0; i < wind_Rv.size(); i++){
+        for(int j = 0; j < wind_Rv[i].size(); j++){
+            cout<<wind_Rv[i][j]<<"\t";
+        }
+        cout<<endl<<"第"<<i+1<<"层风速角度打印结束, 数据量为"<<wind_Rv[i].size()<<endl;
     }
     cout<<endl;
 }
