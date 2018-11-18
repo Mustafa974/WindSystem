@@ -7,12 +7,11 @@
 //
 
 #include "AfterProcess.hpp"
-
+#include <math.h>
+#define PI acos(-1)
 
 //构造函数，传入csv文件路径、目标txt文件路径
-AfterProcess::AfterProcess(string path1, string path2, vector<double> xy){
-    src_path = path1;
-    dest_path = path2;
+AfterProcess::AfterProcess(vector<double> xy){
     vector<double>::iterator it = xy.begin();
     while (it != xy.end()) {
         xyz_domain.push_back(*it);//将传入的设置好的x,y12存储下来
@@ -22,7 +21,7 @@ AfterProcess::AfterProcess(string path1, string path2, vector<double> xy){
 }
 
 //存储CSV中的数据到私有对象csv_data中
-bool AfterProcess::SaveData(){
+bool AfterProcess::SaveData(string src_path){
     //打开文件
     ifstream fin(src_path);
     if (!fin){
@@ -41,6 +40,16 @@ bool AfterProcess::SaveData(){
             if (flag){
 //                cout<<"第一行，直接跳过"<<endl;
                 flag = false;//将标记设为false，表示不是第一行
+                continue;
+            }
+            //如果当前行为空行，直接跳过
+            if ((line == "\n")||(line == "")||(line == "\r")){
+                cout<<"遇到直接空行，跳过"<<endl;
+                wind_speed.push_back(vec_speed);
+                count = 0;
+                vec_speed.clear();
+                save_xy = false;
+                blank_row = false;
                 continue;
             }
             else if ((line != "\n")&&(line != "")&&(line != "\r")) {//读取每层风速数值信息
@@ -66,7 +75,7 @@ bool AfterProcess::SaveData(){
                             vec_speed.clear();
                             save_xy = false;
                             blank_row = false;
-                            break;
+                            break; //遇到全是空字符的空行，直接读取下一行
                         }
                         else{
 //                            cout<<"第一列为空，第二列不为空"<<endl;
@@ -123,6 +132,147 @@ bool AfterProcess::SaveData(){
         }
         wind_speed.push_back(vec_speed);//最后一次存储的数据存入vector中
         return true;
+    }
+}
+
+//存储CSV中的X、Y轴风速
+void AfterProcess::SaveXYData(string src_path_X, string src_path_Y, int col){
+    ifstream finX(src_path_X);
+    if (!finX){
+        cout<<"无法打开X文件"<<endl;//若无法打开文件，直接返回false
+    }
+    else{
+        string line;//存储读取的每一行
+        long count = 0;//记录行数
+        bool flag = true;//用来控制跳过第一行的标记
+        bool end = false;//用来标记是否读完文件
+        bool blank_row = false;//用来标记是否遇到空白行
+        vector<double> vec_speed;//记录每层的风速二维表格，每进入新的一层就清空一次
+        while (getline(finX, line)){//整行读取，换行符“\n”区分，遇到文件尾标志eof终止读取
+            if (flag){
+                flag = false;//将标记设为false，表示不是第一行
+                continue;
+            }
+            if ((line == "\n")||(line == "")||(line == "\r")){
+//                cout<<"X文件遇到直接空行，跳过"<<endl;
+                wind_speed_X.push_back(vec_speed);
+                count = 0;
+                vec_speed.clear();
+                blank_row = false;
+                continue;
+            }
+            else if ((line != "\n")&&(line != "")&&(line != "\r")) {//读取每层风速数值信息
+                end = false;//每层终止标志设为false
+                istringstream sin(line); //将整行字符串line读入到字符串流istringstream中
+                string field;
+                int num = 0;//记录当前列数
+                while (getline(sin, field, ',')){
+                    if (num == 0 && field == "\0"){
+                        blank_row = true;
+                        num++;
+                        continue;
+                    }
+                    else if (num == 1 && blank_row){
+                        if (field == "\0"){
+                            wind_speed_X.push_back(vec_speed);
+                            count = -1;
+                            vec_speed.clear();
+                            blank_row = false;
+                            break; //遇到全是空字符的空行，直接读取下一行
+                        }
+                        else{
+                            blank_row = false;
+                        }
+                    }
+                    if (count > 2){//正式数据行，需要记录y轴风速和风速矩阵
+                        if (num == 0){//正式行的第一列跳过
+                            num++;
+                            continue;
+                        }
+                        if (atof(field.c_str()) == 0 && num >= col){//读到一行的末尾，直接跳出循环
+                            cout<<count+1<<" 行 "<<num+1<<" 列，"<<"到行末，读到EOF 0字符"<<endl;
+                            break;
+                        }
+                        else if (num > 1){//正式行的正式列，全部存入总风速数列
+                            double speed =atof(field.c_str());
+                            vec_speed.push_back(speed);//存储每层的全部风速数据
+                        }
+                    }
+                    num++;
+                }
+                count++;//记录每一层数据块的行数
+            }
+        }
+        wind_speed_X.push_back(vec_speed);//最后一次存储的数据存入vector中
+    }
+    
+    ifstream finY(src_path_Y);
+    if (!finY){
+        cout<<"无法打开Y文件"<<endl;//若无法打开文件，直接返回false
+    }
+    else{
+        string line;//存储读取的每一行
+        long count = 0;//记录行数
+        bool flag = true;//用来控制跳过第一行的标记
+        bool end = false;//用来标记是否读完文件
+        bool blank_row = false;//用来标记是否遇到空白行
+        vector<double> vec_speed;//记录每层的风速二维表格，每进入新的一层就清空一次
+        while (getline(finY, line)){//整行读取，换行符“\n”区分，遇到文件尾标志eof终止读取
+            if (flag){
+                flag = false;//将标记设为false，表示不是第一行
+                continue;
+            }
+            if ((line == "\n")||(line == "")||(line == "\r")){
+//                cout<<"Y文件遇到直接空行，跳过"<<endl;
+                wind_speed_Y.push_back(vec_speed);
+                count = 0;
+                vec_speed.clear();
+                blank_row = false;
+                continue;
+            }
+            else if ((line != "\n")&&(line != "")&&(line != "\r")) {//读取每层风速数值信息
+                end = false;//每层终止标志设为false
+                istringstream sin(line); //将整行字符串line读入到字符串流istringstream中
+                string field;
+                int num = 0;//记录当前列数
+                while (getline(sin, field, ',')){
+                    if (num == 0 && field == "\0"){
+                        blank_row = true;
+                        num++;
+                        continue;
+                    }
+                    else if (num == 1 && blank_row){
+                        if (field == "\0"){
+                            wind_speed_Y.push_back(vec_speed);
+                            count = -1;
+                            vec_speed.clear();
+                            blank_row = false;
+                            break; //遇到全是空字符的空行，直接读取下一行
+                        }
+                        else{
+                            blank_row = false;
+                        }
+                    }
+                    if (count > 2){//正式数据行，需要记录y轴风速和风速矩阵
+                        if (num == 0){//正式行的第一列跳过
+                            num++;
+                            continue;
+                        }
+                        if (atof(field.c_str()) == 0 && num >= col){//读到一行的末尾，直接跳出循环
+                            cout<<count+1<<" 行 "<<num+1<<" 列，"<<"到行末，读到EOF 0字符"<<endl;
+                            break;
+                        }
+                        else if (num > 1){//正式行的正式列，全部存入总风速数列
+                            double speed =atof(field.c_str());
+                            vec_speed.push_back(speed);//存储每层的全部风速数据
+                        }
+                    }
+                    num++;
+                }
+                count++;//记录每一层数据块的行数
+            }
+        }
+        wind_speed_Y.push_back(vec_speed);//最后一次存储的数据存入vector中
     }
 }
 
@@ -217,7 +367,7 @@ void AfterProcess::SaveXYZ(){
 }
 
 //根据传入的参数，计算对应空间区域的平均风速
-vector<double> AfterProcess::CalvulateAvgWindSpeed(string str){
+vector<double> AfterProcess::CalculateAvgWindSpeed(string str){
     cout<<str<<"区域，计算平均风速中..."<<endl;
     
     int x_domain = 0, y_domain = 0, z_domain = 0;
@@ -369,12 +519,12 @@ vector<double> AfterProcess::CalvulateAvgWindSpeed(string str){
     
     // 如果求区域2或区域3的平均风速，需要扣除区域1/2的平均风速
     if (str == "2"){
-        temp = CalvulateAvgWindSpeed("1");
+        temp = CalculateAvgWindSpeed("1");
         wind_count -= temp[0];
         wind_sum -= temp[1];
     }
     else if (str == "3"){
-        temp = CalvulateAvgWindSpeed("2");
+        temp = CalculateAvgWindSpeed("2");
         wind_count -= temp[0];
         wind_sum -= temp[1];
     }
@@ -386,6 +536,35 @@ vector<double> AfterProcess::CalvulateAvgWindSpeed(string str){
     result.push_back(wind_count);
     result.push_back(wind_sum);
     return result;
+}
+
+//计算tan角度
+void AfterProcess::CalculateAngle(){
+    cout<<"计算XY风速角度中..."<<endl;
+//    cout<<"size of X wind is: "<<wind_speed_X.size()<<endl;
+//    cout<<"size of Y wind is: "<<wind_speed_Y.size()<<endl;
+    if (wind_speed_X.size() != wind_speed_Y.size()){
+        cout<<"二者数据数目不同，无法计算"<<endl;
+    }
+    else {
+        vector<double> vec_angle;
+        for (int i = 0; i < wind_speed_X.size(); i++){
+            vec_angle.clear();
+            for (int j = 0; j < wind_speed_X[i].size(); j++){
+                double angle = -9999.0;
+                if (wind_speed_X[i][j] != -9999 && wind_speed_Y[i][j] != -9999){
+//                    if (wind_speed_X[i][j] == 0 && wind_speed_Y[i][j] == 0){
+//                        vec_angle.push_back(angle);
+//                        continue;
+//                    }
+                    angle = atan2(wind_speed_Y[i][j], wind_speed_X[i][j])/PI*180;
+                    cout<<"XY都有数据，Y方向为: "<<wind_speed_Y[i][j]<<",\t\tX方向为: "<<wind_speed_X[i][j]<<",\t正切值为: "<<wind_speed_Y[i][j]/wind_speed_X[i][j]<<",\t角度为: "<<angle<<endl;
+                }
+                vec_angle.push_back(angle);
+            }
+            wind_angle.push_back(vec_angle);
+        }
+    }
 }
 
 /*
@@ -476,6 +655,18 @@ void AfterProcess::PrintWindSpeed(){
             cout<<wind_speed[i][j]<<"\t";
         }
         cout<<endl<<"第"<<i+1<<"层风速打印结束"<<endl;
+    }
+    cout<<endl;
+}
+
+void AfterProcess::PrintAngle(){
+    cout<<"打印风速角度中..."<<endl;
+    cout<<"风速角度列表共"<<wind_angle.size()<<"行"<<endl;
+    for(int i = 0; i < wind_angle.size(); i++){
+//        for(int j = 0; j < wind_angle[i].size(); j++){
+//            cout<<wind_angle[i][j]<<"\t";
+//        }
+        cout<<endl<<"第"<<i+1<<"层风速角度打印结束, 数据量为"<<wind_angle[i].size()<<endl;
     }
     cout<<endl;
 }
