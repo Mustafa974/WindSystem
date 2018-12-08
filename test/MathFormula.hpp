@@ -19,6 +19,7 @@ using namespace std;
 class MathFormula{
     
 public:
+    MathFormula();
     MathFormula(vector<double> vec);//构造函数，存储数据列表
     double Max();//求最大值
     double Min();//求最小值

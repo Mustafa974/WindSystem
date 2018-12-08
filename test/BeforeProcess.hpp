@@ -31,7 +31,7 @@ public:
     bool SaveResult(int time_col, int avg_col, int dir_col);//计算time_slot时间间隔的某列数据平均值并存入txt文件，参数分别为时间所在列号、目标列号
     bool SaveToTXT();//将结果数据全部存入txt
     bool ClearTXT();//清空目标txt文件
-    
+    string CalWindDir(string wd);
 private:
     string src_path;//CSV文件路径
     string dest_path;//目标txt路径
@@ -43,7 +43,6 @@ private:
     vector<vector<string>> result_data;//存储要打印到txt的数据
     string Trim(string str);//私有函数，删除时间列中的冒号、斜杠、空格等，用于判断时间间隔
     string TrimTime(string str, string& time);//从时间列中删去中文字符并插入AM/PM列
-    string CalWindDir(string wd);
     void PrintResultVec();//打印结果
 };
 
