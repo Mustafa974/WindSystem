@@ -9,6 +9,7 @@
 #include "AfterProcess.hpp"
 #include "BeforeProcess.hpp"
 #include <math.h>
+#include <DirectoryService/DirectoryService.h>
 #include <map>
 #define PI acos(-1)
 typedef pair<double, int> PAIR;
@@ -26,7 +27,7 @@ struct CmpByValue2 {
 
 //构造函数，传入csv文件路径、目标txt文件路径
 AfterProcess::AfterProcess(vector<double> xy){
-    dest_path = "result.txt";
+    dest_path = ".\\result.txt";
     vector<double>::iterator it = xy.begin();
     while (it != xy.end()) {
         xyz_domain.push_back(*it);//将传入的设置好的x,y12存储下来
